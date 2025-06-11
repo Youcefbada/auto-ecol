@@ -6,13 +6,14 @@ import sys
 import qtawesome as qta
 import os
 import shutil
+
 from pathlib import Path
 from models import engine, Student, Document
 from datetime import date
 from student_dialog import StudentDialog
-from views.lessons_view import LessonsView
-from views.payments_view import PaymentsView
-from views.statistics_view import StatisticsView
+from lessons_view import LessonsView
+from payments_view import PaymentsView
+from statistics_view import StatisticsView
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -39,7 +40,7 @@ class MainWindow(QMainWindow):
         for text, callback, icon in buttons:
             btn = QPushButton(text)
             btn.setIcon(qta.icon(icon))
-            btn.clicked.connect(callback)
+            btn.clicked.connect(callback)  # Verify connection
             nav_layout.addWidget(btn)
         self.layout.addLayout(nav_layout)
 
@@ -91,9 +92,15 @@ class MainWindow(QMainWindow):
             self.table.setCellWidget(row, 4, cell_widget)
 
     def add_student(self):
-        dialog = StudentDialog(self)
-        if dialog.exec():
-            self.load_students()
+        try:
+            print("Opening Add Student dialog")
+            dialog = StudentDialog(self)
+            if dialog.exec():
+                print("Student added successfully")
+                self.load_students()
+        except Exception as e:
+            print(f"Error in add_student: {e}")
+            QMessageBox.critical(self, "خطأ", f"فشل في إضافة المتدرب: {e}")
 
     def upload_file(self, student):
         file_dialog = QFileDialog()
@@ -102,7 +109,6 @@ class MainWindow(QMainWindow):
             file_name = os.path.basename(file_path)
             dest_path = str(Path(student.folder_path) / file_name)
             shutil.copy(file_path, dest_path)
-
             document = Document(
                 student_id=student.id,
                 document_type="Certificate" if file_name.lower().endswith('.pdf') else "Photo",
@@ -122,28 +128,35 @@ class MainWindow(QMainWindow):
             return
         for doc in documents:
             os.startfile(doc.file_path)
-
     def view_details(self, student):
         lessons_count = len(student.lessons)
         total_payments = sum(p.amount for p in student.payments) if student.payments else 0
-        documents_count = len(student.documents) if hasattr(student, 'documents') else 0  # Safeguard
+        documents_count = len(student.documents) if hasattr(student, 'documents') else 0
         QMessageBox.information(self, "تفاصيل المتدرب",
                                 f"الاسم: {student.full_name}\n"
                                 f"عدد الدروس: {lessons_count}\n"
                                 f"إجمالي المدفوعات: {total_payments}\n"
                                 f"عدد الملفات: {documents_count}")
-
     def show_lessons(self):
         self.lesson_view = LessonsView(self)
-        self.lesson_view.show()
+        self.lesson_view.exec()
 
     def show_payments(self):
-        self.payment_view = PaymentsView(self)
-        self.payment_view.show()
-
+        try:
+            print("Opening Payments view")
+            self.payment_view = PaymentsView(self)
+            self.payment_view.show()
+        except Exception as e:
+            print(f"Error in show_payments: {e}")
+            QMessageBox.critical(self, "خطأ", f"فشل في عرض المدفوعات: {e}")
     def show_statistics(self):
-        self.stats_view = StatisticsView(self)
-        self.stats_view.show()
+        try:
+            print("Opening Statistics view")
+            self.stats_view = StatisticsView(self)
+            self.stats_view.exec()
+        except Exception as e:
+            print(f"Error in show_statistics: {e}")
+            QMessageBox.critical(self, "خطأ", f"فشل في عرض الإحصائيات: {e}")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

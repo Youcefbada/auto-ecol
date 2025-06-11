@@ -1,14 +1,17 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QLabel
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QLabel
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 from models import engine, Student, Lesson, Payment
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from pathlib import Path
+from PyQt6.QtWidgets import QMessageBox
 
-class StatisticsView(QWidget):
+class StatisticsView(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setWindowTitle("إحصائيات المدرسة")
+        self.setMinimumSize(800, 400)
         self.session = sessionmaker(bind=engine)()
 
         layout = QVBoxLayout(self)

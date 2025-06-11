@@ -1,14 +1,18 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QComboBox, QDateEdit, QLineEdit, QLabel
-from PyQt6.QtCore import Qt, QDate
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QComboBox, QDateEdit, QLineEdit, QLabel
+from PyQt6.QtCore import Qt, QDate 
 from sqlalchemy.orm import sessionmaker
 from models import engine, Lesson, Student
+from PyQt6.QtWidgets import QMessageBox
 
-class LessonsView(QWidget):
+class LessonsView(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setWindowTitle("إدارة الدروس")
+        self.setMinimumSize(800, 400)
+        layout = QVBoxLayout(self)
         self.session = sessionmaker(bind=engine)()
 
-        layout = QVBoxLayout(self)
+        #layout = QVBoxLayout(self)
 
         # فلتر
         filter_layout = QHBoxLayout()
@@ -47,7 +51,6 @@ class LessonsView(QWidget):
         self.add_date.setDate(QDate.currentDate())
         add_layout.addWidget(QLabel("التاريخ:"))
         add_layout.addWidget(self.add_date)
-
         self.add_time = QLineEdit()
         self.add_time.setPlaceholderText("hh:mm")
         add_layout.addWidget(QLabel("الوقت:"))

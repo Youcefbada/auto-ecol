@@ -1,7 +1,6 @@
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QComboBox, QLabel, QMessageBox
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QComboBox, QLabel
 from PyQt6.QtCore import Qt
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import IntegrityError
 from models import engine, Student
 from pathlib import Path
 import os
@@ -77,38 +76,33 @@ class StudentDialog(QDialog):
 
         folder_path = str(Path("Documents") / f"{full_name}_{file_number}")
 
-        try:
-            if self.student:
-                self.student.full_name = full_name
-                self.student.file_number = file_number
-                self.student.phone = phone
-                self.student.address = address
-                self.student.training_type = training_type
-                self.student.status = status
-                if self.student.folder_path != folder_path:
-                    if os.path.exists(self.student.folder_path):
-                        os.rename(self.student.folder_path, folder_path)
-                    self.student.folder_path = folder_path
-            else:
-                existing_student = self.session.query(Student).filter_by(file_number=file_number).first()
-                if existing_student:
-                    QMessageBox.warning(self, "خطأ", "رقم الملف موجود بالفعل!")
-                    return
-                self.student = Student(
-                    full_name=full_name,
-                    file_number=file_number,
-                    phone=phone,
-                    address=address,
-                    training_type=training_type,
-                    status=status,
-                    folder_path=folder_path
-                )
-                self.session.add(self.student)
+        if self.student:
+            self.student.full_name = full_name
+            self.student.file_number = file_number
+            self.student.phone = phone
+            self.student.address = address
+            self.student.training_type = training_type
+            self.student.status = status
+            if self.student.folder_path != folder_path:
+                if os.path.exists(self.student.folder_path):
+                    os.rename(self.student.folder_path, folder_path)
+                self.student.folder_path = folder_path
+        else:
+            existing_student = self.session.query(Student).filter_by(file_number=file_number).first()
+            if existing_student:
+                QMessageBox.warning(self, "خطأ", "رقم الملف موجود بالفعل!")
+                return
+            self.student = Student(
+                full_name=full_name,
+                file_number=file_number,
+                phone=phone,
+                address=address,
+                training_type=training_type,
+                status=status,
+                folder_path=folder_path
+            )
+            self.session.add(self.student)
 
-            os.makedirs(folder_path, exist_ok=True)
-            self.session.commit()
-            self.accept()
-        except IntegrityError:
-            self.session.rollback()
-            QMessageBox.warning(self, "خطأ", "رقم الملف موجود بالفعل! يرجى اختيار رقم ملف آخر.")
-            return
+        os.makedirs(folder_path, exist_ok=True)
+        self.session.commit()
+        self.accept()
