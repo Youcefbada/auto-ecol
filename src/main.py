@@ -5,7 +5,8 @@ import sys
 import qtawesome as qta
 import os
 from pathlib import Path
-from models import engine, Student, Document  # استيراد النماذج من models.py
+import shutil
+from models import engine, Student, Document
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -13,23 +14,20 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Driving School Management")
         self.setMinimumSize(800, 600)
 
-        # إعداد جلسة SQLAlchemy
         self.session = sessionmaker(bind=engine)()
 
-        # إعداد الواجهة
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.layout = QVBoxLayout(self.central_widget)
         self.layout.setContentsMargins(10, 10, 10, 10)
 
-        # شريط التنقل
         nav_layout = QHBoxLayout()
         buttons = [
             ("المتدربون", self.load_students, "mdi.account-group"),
             ("إضافة متدرب", self.add_student, "mdi.account-plus"),
             ("الدروس", self.show_lessons, "mdi.book-open-variant"),
             ("المدفوعات", self.show_payments, "mdi.cash"),
-            ("الملفات", self.show_files, "mdi.folder"),
+            ("الملفات", self.view_files, "mdi.folder"),  # Changed from show_files to view_files
             ("الإحصائيات", self.show_statistics, "mdi.chart-bar")
         ]
         for text, callback, icon in buttons:
@@ -39,13 +37,11 @@ class MainWindow(QMainWindow):
             nav_layout.addWidget(btn)
         self.layout.addLayout(nav_layout)
 
-        # البحث
         self.search_box = QLineEdit()
         self.search_box.setPlaceholderText("ابحث بالاسم، الهاتف، أو رقم الملف")
         self.search_box.textChanged.connect(self.load_students)
         self.layout.addWidget(self.search_box)
 
-        # جدول المتدربين
         self.table = QTableWidget()
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["الاسم", "رقم الملف", "الهاتف", "الحالة", "الإجراءات"])
@@ -139,13 +135,13 @@ class MainWindow(QMainWindow):
                                 f"عدد الملفات: {documents_count}")
 
     def show_lessons(self):
-        pass  # يمكن إضافة واجهة للدروس
+        pass
 
     def show_payments(self):
-        pass  # يمكن إضافة واجهة للمدفوعات
+        pass
 
     def show_statistics(self):
-        pass  # يمكن إضافة واجهة للإحصائيات
+        pass
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
