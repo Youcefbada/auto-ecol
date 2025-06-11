@@ -1,12 +1,18 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QTableWidget, QTableWidgetItem, QFileDialog, QMessageBox
 from PyQt6.QtCore import Qt
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError
 import sys
 import qtawesome as qta
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
 from models import engine, Student, Document
+from datetime import date
+from student_dialog import StudentDialog
+from views.lessons_view import LessonsView
+from views.payments_view import PaymentsView
+from views.statistics_view import StatisticsView
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -27,7 +33,7 @@ class MainWindow(QMainWindow):
             ("إضافة متدرب", self.add_student, "mdi.account-plus"),
             ("الدروس", self.show_lessons, "mdi.book-open-variant"),
             ("المدفوعات", self.show_payments, "mdi.cash"),
-            ("الملفات", self.view_files, "mdi.folder"),  # Changed from show_files to view_files
+            ("الملفات", self.view_files, "mdi.folder"),
             ("الإحصائيات", self.show_statistics, "mdi.chart-bar")
         ]
         for text, callback, icon in buttons:
@@ -63,7 +69,7 @@ class MainWindow(QMainWindow):
             self.table.insertRow(row)
             self.table.setItem(row, 0, QTableWidgetItem(student.full_name))
             self.table.setItem(row, 1, QTableWidgetItem(student.file_number))
-            self.table.setItem(row, 2, QTableWidgetItem(student.phone))
+            self.table.setItem(row, 2, QTableWidgetItem(student.phone or ""))
             self.table.setItem(row, 3, QTableWidgetItem(student.status))
 
             btn_layout = QHBoxLayout()
@@ -85,19 +91,9 @@ class MainWindow(QMainWindow):
             self.table.setCellWidget(row, 4, cell_widget)
 
     def add_student(self):
-        student = Student(
-            full_name="محمد بن أحمد",
-            file_number="12345",
-            phone="0551234567",
-            address="الجزائر",
-            training_type="Pratique",
-            status="Active",
-            folder_path=str(Path("Documents") / "محمد_بن_أحمد_12345")
-        )
-        os.makedirs(student.folder_path, exist_ok=True)
-        self.session.add(student)
-        self.session.commit()
-        self.load_students()
+        dialog = StudentDialog(self)
+        if dialog.exec():
+            self.load_students()
 
     def upload_file(self, student):
         file_dialog = QFileDialog()
@@ -116,7 +112,10 @@ class MainWindow(QMainWindow):
             self.session.commit()
             QMessageBox.information(self, "نجاح", "تم تحميل الملف!")
 
-    def view_files(self, student):
+    def view_files(self, student=None):
+        if not student:
+            QMessageBox.warning(self, "خطأ", "يرجى اختيار متدرب أولاً!")
+            return
         documents = self.session.query(Document).filter_by(student_id=student.id).all()
         if not documents:
             QMessageBox.warning(self, "لا توجد ملفات", "لا توجد ملفات لهذا المتدرب.")
@@ -127,7 +126,7 @@ class MainWindow(QMainWindow):
     def view_details(self, student):
         lessons_count = len(student.lessons)
         total_payments = sum(p.amount for p in student.payments) if student.payments else 0
-        documents_count = len(student.documents)
+        documents_count = len(student.documents) if hasattr(student, 'documents') else 0  # Safeguard
         QMessageBox.information(self, "تفاصيل المتدرب",
                                 f"الاسم: {student.full_name}\n"
                                 f"عدد الدروس: {lessons_count}\n"
@@ -135,13 +134,16 @@ class MainWindow(QMainWindow):
                                 f"عدد الملفات: {documents_count}")
 
     def show_lessons(self):
-        pass
+        self.lesson_view = LessonsView(self)
+        self.lesson_view.show()
 
     def show_payments(self):
-        pass
+        self.payment_view = PaymentsView(self)
+        self.payment_view.show()
 
     def show_statistics(self):
-        pass
+        self.stats_view = StatisticsView(self)
+        self.stats_view.show()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
